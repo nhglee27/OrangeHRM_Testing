@@ -1,0 +1,7 @@
+username,password,expected
+Admin,admin123,success
+Admin,admin000,failure
+adminfake,admin123,failure
+,admin123,failure
+Admin,,failure
+admin' OR '1'='1, admin' OR '1'='1, failure
