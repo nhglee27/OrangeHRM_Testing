@@ -1,48 +1,79 @@
 package com.example.demowebshop;
 
-import io.github.bonigarcia.wdm.WebDriverManager;
-import org.junit.jupiter.api.AfterAll;
+import java.time.Duration;
+
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.support.ui.WebDriverWait;
+import org.openqa.selenium.edge.EdgeDriver;
+import org.openqa.selenium.edge.EdgeOptions;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.firefox.FirefoxOptions;
 
-import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
+import io.github.bonigarcia.wdm.WebDriverManager;
 
 public class BaseTest {
 
+    // Biến driver toàn cục để các test class khác kế thừa
     protected static WebDriver driver;
-    protected static WebDriverWait wait;
-    protected static String baseUrl = "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login";
+
+    // Có thể đổi browser bằng System property: mvn test -Dbrowser=firefox
+    private String browser = System.getProperty("browser", "chrome").toLowerCase();
 
     @BeforeAll
-    static void setup() {
-        WebDriverManager.chromedriver().setup();
-
-        ChromeOptions options = new ChromeOptions();
-        options.setBinary("C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe");
-
-        Map<String, Object> prefs = new HashMap<>();
-        prefs.put("credentials_enable_service", false);
-        prefs.put("profile.password_manager_enabled", false);
-        options.setExperimentalOption("prefs", prefs);
-
-        driver = new ChromeDriver(options);
-        driver.manage().window().maximize();
-        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5));
-
-        wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-        System.out.println("✅ WebDriver started!");
+    static void setupDriverManager() {
+        // Chỉ khởi tạo 1 lần duy nhất
+        // WebDriverManager sẽ tự tải driver mới nhất phù hợp với Chrome/Edge/Firefox của bạn
     }
 
-    @AfterAll
-    static void tearDown() {
+    @BeforeEach
+    void setup() {
+        driver = createDriver(browser);
+        driver.manage().window().maximize();
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+        driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(30));
+        System.out.println("Khởi động " + browser.toUpperCase() + " thành công!");
+    }
+
+    private WebDriver createDriver(String browserName) {
+        return switch (browserName) {
+            case "chrome" -> {
+                WebDriverManager.chromedriver().setup();
+                ChromeOptions options = new ChromeOptions();
+                options.addArguments("--disable-notifications");
+                options.addArguments("--disable-popup-blocking");
+                options.addArguments("--start-maximized");
+                // options.addArguments("--headless"); // bỏ comment nếu chạy CI/CD
+                yield new ChromeDriver(options);
+            }
+            case "edge" -> {
+                WebDriverManager.edgedriver().setup();
+                EdgeOptions options = new EdgeOptions();
+                options.addArguments("--disable-notifications");
+                yield new EdgeDriver(options);
+            }
+            case "firefox" -> {
+                WebDriverManager.firefoxdriver().setup();
+                FirefoxOptions options = new FirefoxOptions();
+                yield new FirefoxDriver(options);
+            }
+            default -> throw new IllegalArgumentException("Browser không hỗ trợ: " + browserName);
+        };
+    }
+
+    @AfterEach
+    void tearDown() {
         if (driver != null) {
             driver.quit();
-            System.out.println("✅ Driver closed!");
+            System.out.println("Đã đóng browser");
         }
+    }
+
+    // Helper để các test class dùng nhanh (tùy chọn)
+    protected void sleep(int seconds) {
+        try { Thread.sleep(seconds * 1000L); } catch (InterruptedException ignored) {}
     }
 }
