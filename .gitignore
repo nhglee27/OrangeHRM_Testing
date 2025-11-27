@@ -2,3 +2,4 @@ target/
 *.class
 .vscode/
 *.log
+src/test/java/com/example/demowebshop/BaseTest.java
