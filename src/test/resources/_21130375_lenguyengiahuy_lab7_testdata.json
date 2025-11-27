@@ -1,0 +1,26 @@
+{
+  "baseUrl": "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+  "admin": {
+    "username": "Admin",
+    "password": "admin123"
+  },
+  "payGrade": {
+    "minSalary": "2000",
+    "maxSalary": "8000",
+    "invalidMaxSalary": "1000"
+  },
+  "user": {
+    "defaultPassword": "TestPass123!",
+    "weakPassword": "123",
+    "employeeNameHint": "a",
+    "invalidEmployee": "User_Khong_Ton_Tai_999"
+  },
+  "messages": {
+    "required": "Required",
+    "alreadyExists": "Already exists",
+    "salaryError": "Should be higher than Minimum Salary",
+    "passwordMismatch": "Passwords do not match",
+    "passwordWeak": "Should have at least 7 characters",
+    "invalid": "Invalid"
+  }
+}
