@@ -1,0 +1,29 @@
+{
+  "baseUrl": "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+  "admin": {
+    "username": "Admin",
+    "password": "admin123"
+  },
+  "contactDetails": {
+    "street1": "123 Nguyen Trai",
+    "street2": "Ward 5",
+    "city": "Ho Chi Minh",
+    "state": "Tan Binh",
+    "zipcode": "70000",
+    "country": "Viet Nam",
+    "homePhone": "028888999",
+    "mobilePhone": "0901234567",
+    "workEmail": "work@example.com",
+    "otherEmail": "other@example.com"
+  },
+  "invalidContactDetails": {
+    "zipcode": "ABCXYZ",
+    "homePhone": "phone-number-invalid",
+    "email": "wrong-email-format"
+  },
+  "messages": {
+    "required": "Required",
+    "invalidEmail": "Should be a valid email",
+    "invalidPhone": "Invalid phone number"
+  }
+}
