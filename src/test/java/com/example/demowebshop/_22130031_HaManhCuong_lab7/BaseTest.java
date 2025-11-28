@@ -31,7 +31,7 @@ public class BaseTest {
         try {
             ObjectMapper mapper = new ObjectMapper();
             // Đọc file JSON
-            testData = mapper.readTree(new File("src/test/resources/leave_testdata.json"));
+            testData = mapper.readTree(new File("src/test/resources/_22130031_HaManhCuong_lab7_testdata.json"));
             baseUrl = testData.get("baseUrl").asText();
         } catch (IOException e) {
             e.printStackTrace();
