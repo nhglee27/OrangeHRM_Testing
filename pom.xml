@@ -47,7 +47,12 @@
             <version>5.10.2</version>
             <scope>test</scope>
         </dependency>
-        
+        <!-- TestNG -->
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>7.9.0</version>
+        </dependency>
         <!-- ✅ Data-Driven Testing Json -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

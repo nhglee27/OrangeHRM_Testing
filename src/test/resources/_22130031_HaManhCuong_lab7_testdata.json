@@ -1,0 +1,29 @@
+{
+  "baseUrl": "https://opensource-demo.orangehrmlive.com/",
+  "admin": {
+    "username": "Admin",
+    "password": "admin123"
+  },
+  "employee": {
+    "username": "mc4981",
+    "password": "Mc4981~",
+    "fullName": "Ha Manh Cuong"
+  },
+  "leave": {
+    "type": "CAN - FMLA",
+    "entitlementAmount": "10",
+    "negativeAmount": "-5",
+    "partialAmount": "5",
+    "comment": "Xin nghi phep auto test (JSON Data)"
+  },
+  "messages": {
+    "success": "Success",
+    "saved": "Successfully Saved",
+    "submitted": "Successfully Submitted",
+    "updated": "Successfully Updated",
+    "required": "Required",
+    "formatError": "Should be a number with upto 2 decimal places",
+    "overlapping": "Overlaps",
+    "weekendError": "No working"
+  }
+}
