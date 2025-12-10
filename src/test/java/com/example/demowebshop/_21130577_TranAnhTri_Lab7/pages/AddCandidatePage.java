@@ -1,40 +1,29 @@
 package com.example.demowebshop._21130577_TranAnhTri_Lab7.pages;
 
-import java.time.Duration;
-
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
-public class AddCandidatePage {
-
-  WebDriver driver;
-  WebDriverWait wait;
-
-  By firstName = By.name("firstName");
-  By lastName = By.name("lastName");
-  By email = By.xpath("//div[@id='app']/div/div[2]/div[2]/div/div/form/div[3]/div/div/div/div[2]/input");
-  By saveBtn = By.xpath("//button[@type='submit']");
+public class AddCandidatePage extends BasePage {
+  private By firstName = By.name("firstName");
+  private By lastName = By.name("lastName");
+  private By email = By.xpath("//div[@id='app']/div/div[2]/div[2]/div/div/form/div[3]/div/div/div/div[2]/input");
+  private By saveBtn = By.xpath("//button[@type='submit']");
 
   public AddCandidatePage(WebDriver driver) {
-    this.driver = driver;
-    this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+    super(driver);
   }
 
-  public void enterValidCandidate(String fName, String lName, String mail) {
-    wait.until(ExpectedConditions.visibilityOfElementLocated(firstName)).sendKeys(fName);
-    wait.until(ExpectedConditions.visibilityOfElementLocated(lastName)).sendKeys(lName);
-    wait.until(ExpectedConditions.visibilityOfElementLocated(email)).sendKeys(mail);
-
-    // Thêm sleep ngắn hoặc chờ element clickable
-    wait.until(ExpectedConditions.elementToBeClickable(saveBtn));
-    driver.findElement(saveBtn).click();
+  public void enterValidCandidate(String fName, String lName, String mail) throws InterruptedException {
+    type(firstName, fName);
+    type(lastName, lName);
+    type(email, mail);
+    waitClickable(saveBtn);
+    driver.findElement(saveBtn).click(); // giữ nguyên logic của bạn
   }
 
-  public void clickSave() {
-    wait.until(ExpectedConditions.elementToBeClickable(saveBtn)).click();
+  public void clickSave() throws InterruptedException {
+    click(saveBtn);
   }
 
   public boolean isValidationDisplayed() {
@@ -43,6 +32,6 @@ public class AddCandidatePage {
   }
 
   public WebElement getFirstNameField() {
-    return wait.until(ExpectedConditions.visibilityOfElementLocated(firstName));
+    return waitVisible(firstName);
   }
 }
