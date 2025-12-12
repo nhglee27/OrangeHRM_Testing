@@ -1,0 +1,64 @@
+{
+  "baseUrl": "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+  "admin": {
+    "username": "Admin",
+    "password": "admin123"
+  },
+  "payGrade": {
+    "minSalary": "2000",
+    "maxSalary": "8000",
+    "invalidMaxSalary": "1000"
+  },
+  "user": {
+    "defaultPassword": "TestPass123!",
+    "weakPassword": "123",
+    "employeeNameHint": "a",
+    "invalidEmployee": "User_Khong_Ton_Tai_999"
+  },
+  "messages": {
+    "required": "Required",
+    "alreadyExists": "Already exists",
+    "salaryError": "Should be higher than Minimum Salary",
+    "passwordMismatch": "Passwords do not match",
+    "passwordWeak": "Should have at least 7 characters",
+    "invalid": "Invalid",
+    "invalidEmail": "Should be a valid email",
+    "invalidPhone": "Invalid phone number",
+    "success": "Success",
+    "saved": "Successfully Saved",
+    "submitted": "Successfully Submitted",
+    "updated": "Successfully Updated",
+    "formatError": "Should be a number with upto 2 decimal places",
+    "overlapping": "Overlaps",
+    "weekendError": "No working"
+  },
+  "employee": {
+    "username": "mc4981",
+    "password": "Mc4981~",
+    "fullName": "Ha Manh Cuong"
+  },
+  "leave": {
+    "type": "CAN - FMLA",
+    "entitlementAmount": "10",
+    "negativeAmount": "-5",
+    "partialAmount": "5",
+    "comment": "Xin nghi phep auto test (JSON Data)"
+  },
+   "contactDetails": {
+    "street1": "123 Nguyen Trai",
+    "street2": "Ward 5",
+    "city": "Ho Chi Minh",
+    "state": "Tan Binh",
+    "zipcode": "70000",
+    "country": "Viet Nam",
+    "homePhone": "028888999",
+    "mobilePhone": "0901234567",
+    "workEmail": "work@example.com",
+    "otherEmail": "other@example.com"
+  },
+  "invalidContactDetails": {
+    "zipcode": "ABCXYZ",
+    "homePhone": "phone-number-invalid",
+    "email": "wrong-email-format"
+  }
+}

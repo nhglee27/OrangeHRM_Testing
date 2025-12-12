@@ -18,7 +18,7 @@ import com.example.demowebshop._21130577_TranAnhTri_Lab7.pages.AddCandidatePage;
 import com.example.demowebshop._21130577_TranAnhTri_Lab7.pages.CandidatesPage;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class CandidatesTests extends BaseTest {
+public class CandidatesTest extends BaseTest {
   CandidatesPage candidates;
   AddCandidatePage addCandidate;
 
