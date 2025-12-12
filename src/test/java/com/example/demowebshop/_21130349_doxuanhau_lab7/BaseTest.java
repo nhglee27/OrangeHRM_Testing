@@ -4,33 +4,30 @@ import java.time.Duration;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.firefox.FirefoxOptions;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
 
 public class BaseTest {
 
-    // Không còn protected static WebDriver driver nữa
-    // Mỗi test class tự quản lý driver của nó
-
     @BeforeAll
     static void setupDriverManager() {
-        WebDriverManager.firefoxdriver().setup();
+        WebDriverManager.chromedriver().setup();
     }
 
-    // Helper method để tạo driver khi cần
     protected WebDriver createDriver() {
-        FirefoxOptions options = new FirefoxOptions();
-        // options.addArguments("--headless"); // bật nếu cần
-        WebDriver driver = new FirefoxDriver(options);
+        ChromeOptions options = new ChromeOptions();
+        // options.addArguments("--headless=new"); // Bật nếu muốn chạy headless (Chrome 109+)
+
+        WebDriver driver = new ChromeDriver(options);
+
         driver.manage().window().maximize();
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
         driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(30));
-        // delete all data of browser
         driver.manage().deleteAllCookies();
 
-        System.out.println("KHỞI TẠO FIREFOX DRIVER THÀNH CÔNG!");
+        System.out.println("KHỞI TẠO CHROME DRIVER THÀNH CÔNG!");
         return driver;
     }
 

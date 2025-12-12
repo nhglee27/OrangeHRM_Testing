@@ -12,7 +12,7 @@ import com.example.demowebshop._21130577_TranAnhTri_Lab7.pages.AddVacancyPage;
 import com.example.demowebshop._21130577_TranAnhTri_Lab7.pages.VacanciesPage;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class VacancyTests extends BaseTest {
+public class VacancyTest extends BaseTest {
   VacanciesPage vacancies;
   AddVacancyPage addVacancy;
 

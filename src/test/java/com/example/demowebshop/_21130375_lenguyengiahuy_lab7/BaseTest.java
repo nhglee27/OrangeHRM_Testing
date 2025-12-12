@@ -39,7 +39,7 @@ public class BaseTest {
 
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--remote-allow-origins=*");
-        options.setBinary("C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe"); // Uncomment nếu dùng Brave
+        // options.setBinary("C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe"); // Uncomment nếu dùng Brave
 
         Map<String, Object> prefs = new HashMap<>();
         prefs.put("credentials_enable_service", false);
