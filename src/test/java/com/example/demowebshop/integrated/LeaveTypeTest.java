@@ -7,6 +7,7 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -15,167 +16,180 @@ import static org.junit.jupiter.api.Assertions.fail;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class LeaveTypeTest extends BaseTest {
 
-    // Lưu lại ngày đã xin nghỉ để verify
-    private String fromDate;
-    private String toDate;
+    private String appliedDate;
 
-    @BeforeAll
-    void setupDates() {
-        // Lấy ngày hiện tại và ngày mai để test
-        LocalDate today = LocalDate.now();
-        fromDate = today.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-        toDate = today.plusDays(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+    @BeforeEach
+    void preCondition() {
+        if (driver == null) setupSuite();
     }
 
-    @Test @Order(1)
-    public void TC_LT_001_EmployeeApplyLeave() {
-        // 1. Đăng nhập với tài khoản NHÂN VIÊN
-        String empUser = testData.get("employee").get("username").asText();
-        String empPass = testData.get("employee").get("password").asText();
-        loginAsUser(empUser, empPass);
+    // --- TC 01: EMPLOYEE APPLY LEAVE ---
+    @Test
+    @Order(1)
+    void testEmployeeApplyLeave() throws InterruptedException {
+        System.out.println("🔹 TC_LT_001: Nhân viên nộp đơn xin nghỉ phép");
 
-        // 2. Vào trang Apply Leave
-        wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//span[text()='Leave']"))).click();
-        wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//a[normalize-space()='Apply']"))).click();
-        waitForLoader();
+        // 1. Login Employee
+        loginEmployee();
 
-        // 3. Điền đơn
-        String leaveType = testData.get("leave").get("type").asText();
-        selectDropdown("Leave Type", leaveType);
+        // 2. Navigate
+        navigateToApply();
 
-        // Nhập ngày (Nhập text an toàn hơn click calendar)
-        enterDate("From Date", fromDate);
-        enterDate("To Date", toDate);
-        
-        // Click vào textarea để trigger tính toán số ngày (logic của web)
-        driver.findElement(By.tagName("textarea")).click();
-        try { Thread.sleep(2000); } catch (Exception ignored) {} // Đợi tính toán duration
+        // 3. Tính ngày (Tương lai 1 tuần, tránh cuối tuần)
+        LocalDate date = LocalDate.now().plusDays(7);
+        if (date.getDayOfWeek().getValue() >= 6) date = date.plusDays(2);
+        appliedDate = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
-        typeTextArea("Comments", "Auto Test Apply Leave");
+        // 4. Submit Form
+        submitLeaveForm(appliedDate);
 
-        // 4. Click Apply
-        clickSave(); // Nút Apply cũng là type='submit'
-        verifySuccessMessage();
-        
-        // Logout để chuẩn bị cho test Admin
+        // 5. Verify Success
+        verifySuccessMessage(testData.get("messages").get("success").asText());
+
         logout();
     }
 
-    @Test @Order(2)
-    public void TC_LT_003_AdminRejectLeave() {
+    // --- TC 02: ADMIN APPROVE LEAVE ---
+    @Test
+    @Order(2)
+    void testAdminApproveLeave() throws InterruptedException {
+        System.out.println("🔹 TC_LT_002: Admin duyệt đơn nghỉ phép");
+
         // 1. Login Admin
         loginAsAdmin();
 
-        // 2. Vào Leave List
-        wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//span[text()='Leave']"))).click();
-        wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//a[normalize-space()='Leave List']"))).click();
-        waitForLoader();
+        // 2. Navigate Leave List
+        navigateToLeaveList();
 
-        // 3. Search đơn của nhân viên vừa tạo
-        // (Quan trọng: Phải search để tránh reject nhầm đơn người khác)
-        String empName = testData.get("employee").get("fullName").asText();
-        selectAutocomplete("Employee Name", empName);
-        
-        // Bỏ chọn status mặc định, chỉ chọn Pending Approval
-        // (Logic dropdown checkbox của OrangeHRM hơi phức tạp, ta dùng Search mặc định cũng được)
-        
-        driver.findElement(By.cssSelector("button[type='submit']")).click(); // Search Button
-        waitForLoader();
+        // 3. Search & Approve
+        searchAndActionLeave("Approve", appliedDate);
 
-        // 4. Tìm và Reject đơn đầu tiên trong list (Pending)
-        try {
-            // Tìm nút Approve hoặc Reject trong dòng đầu tiên
-            WebElement rejectBtn = wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("//div[@class='oxd-table-card'][1]//button[contains(., 'Reject')]")));
-            
-            rejectBtn.click();
-            verifySuccessMessage(); // Thông báo "Successfully Updated"
-            
-        } catch (TimeoutException e) {
-            System.out.println("⚠️ Không tìm thấy đơn Pending nào để Reject. Có thể đơn đã được duyệt hoặc test TC_LT_001 thất bại.");
-            // Không fail test này để tránh ảnh hưởng luồng, chỉ warning
-        }
+        // 4. Verify Success
+        verifySuccessMessage(testData.get("messages").get("success").asText());
+
+        logout();
     }
 
-    // --- HELPER METHODS ---
+    // --- TC 03: ADMIN REJECT LEAVE (Tạo đơn mới -> Reject) ---
+    @Test
+    @Order(3)
+    void testAdminRejectLeave() throws InterruptedException {
+        System.out.println("🔹 TC_LT_003: Admin từ chối đơn nghỉ phép");
 
-    private void loginAsUser(String u, String p) {
-        // Nếu đang login (có avatar), logout trước
-        try {
-            if(driver.findElements(By.className("oxd-userdropdown-img")).size() > 0) {
-                logout();
-            }
-        } catch (Exception ignored) {}
+        // --- BƯỚC PHỤ: Tạo đơn mới để có cái mà Reject ---
+        loginEmployee();
+        navigateToApply();
 
-        WebElement userField = wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("username")));
-        userField.sendKeys(Keys.chord(Keys.CONTROL, "a"), Keys.DELETE);
-        userField.sendKeys(u);
+        LocalDate date = LocalDate.now().plusDays(14);
+        if (date.getDayOfWeek().getValue() >= 6) date = date.plusDays(2);
+        String rejectDate = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
-        WebElement passField = driver.findElement(By.name("password"));
-        passField.sendKeys(Keys.chord(Keys.CONTROL, "a"), Keys.DELETE);
-        passField.sendKeys(p);
+        submitLeaveForm(rejectDate);
+        verifySuccessMessage(testData.get("messages").get("success").asText());
+        logout();
+        // --------------------------------------------------
 
+        // 1. Login Admin
+        loginAsAdmin();
+
+        // 2. Navigate Leave List
+        navigateToLeaveList();
+
+        // 3. Search & Reject
+        searchAndActionLeave("Reject", rejectDate);
+
+        // 4. Verify
+        verifySuccessMessage(testData.get("messages").get("success").asText());
+    }
+
+    // ================= HELPER METHODS (Private) =================
+
+    private void loginEmployee() {
+        String u = testData.get("employee").get("username").asText();
+        String p = testData.get("employee").get("password").asText();
+        driver.get(testData.get("baseUrl").asText());
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("username"))).sendKeys(u);
+        driver.findElement(By.name("password")).sendKeys(p);
         driver.findElement(By.cssSelector("button[type='submit']")).click();
-        waitForLoader();
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.className("oxd-userdropdown-img")));
     }
 
     private void logout() {
-        driver.findElement(By.className("oxd-userdropdown-name")).click();
-        wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//a[text()='Logout']"))).click();
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("username")));
+        try {
+            driver.findElement(By.className("oxd-userdropdown-name")).click();
+            wait.until(ExpectedConditions.elementToBeClickable(By.linkText("Logout"))).click();
+            wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("username")));
+        } catch (Exception ignored) {}
     }
 
-    private void selectDropdown(String label, String optionText) {
-        // Dropdown trong Leave form
-        driver.findElement(By.xpath("//label[text()='" + label + "']/ancestor::div[contains(@class,'oxd-input-group')]//div[contains(@class, 'oxd-select-text')]")).click();
+    private void navigateToApply() {
+        wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//span[text()='Leave']"))).click();
+        wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//a[text()='Apply']"))).click();
+    }
+
+    private void navigateToLeaveList() {
+        wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//span[text()='Leave']"))).click();
+        wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//a[text()='Leave List']"))).click();
+    }
+
+    private void submitLeaveForm(String dateStr) throws InterruptedException {
+        String type = testData.get("leave").get("type").asText();
+        selectDropdown("Leave Type", type);
+        enterDate("From Date", dateStr);
+        enterDate("To Date", dateStr);
+        handlePartialDays();
+        driver.findElement(By.tagName("textarea")).sendKeys(testData.get("leave").get("comment").asText());
+        driver.findElement(By.xpath("//button[text()=' Apply ']")).click();
+    }
+
+    private void searchAndActionLeave(String action, String dateStr) throws InterruptedException {
+        String empName = testData.get("employee").get("fullName").asText();
+        typeAutocomplete("Employee Name", empName);
+        driver.findElement(By.xpath("//button[text()=' Search ']")).click();
         try {
-            WebElement option = wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("//div[@role='option']//span[text()='" + optionText + "']")));
-            option.click();
+            WebElement btn = driver.findElement(By.xpath("//button[text()=' " + action + " ']"));
+            btn.click();
         } catch (Exception e) {
-            driver.findElement(By.xpath("//div[@role='option'][1]")).click(); // Fallback
+            fail("❌ Không tìm thấy nút " + action + " cho nhân viên " + empName);
         }
     }
 
-    private void enterDate(String label, String dateYyyyMmDd) {
-        WebElement input = driver.findElement(By.xpath("//label[text()='" + label + "']/ancestor::div[contains(@class,'oxd-input-group')]//input"));
+    private void verifySuccessMessage(String keyword) {
+        try {
+            WebElement toast = wait.until(ExpectedConditions.visibilityOfElementLocated(
+                    By.xpath("//div[contains(@class, 'oxd-toast--success')]")));
+            assertTrue(toast.getText().contains(keyword) || toast.getText().contains("Success"));
+        } catch (Exception e) {
+            boolean found = driver.getPageSource().contains(keyword) || driver.getPageSource().contains("Successfully");
+            assertTrue(found, "Không tìm thấy thông báo thành công.");
+        }
+    }
+
+    private void selectDropdown(String label, String optionText) {
+        driver.findElement(By.xpath("//label[text()='" + label + "']/../following-sibling::div//div[contains(@class,'oxd-select-text')]")).click();
+        wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//div[@role='option']//span[text()='" + optionText + "']"))).click();
+    }
+
+    private void typeAutocomplete(String label, String text) throws InterruptedException {
+        WebElement input = driver.findElement(By.xpath("//label[text()='" + label + "']/../following-sibling::div//input"));
+        input.sendKeys(text);
+        wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//div[@role='listbox']//div[1]"))).click();
+    }
+
+    private void enterDate(String label, String dateStr) {
+        WebElement input = driver.findElement(By.xpath("//label[text()='" + label + "']/../following-sibling::div//input"));
         input.sendKeys(Keys.chord(Keys.CONTROL, "a"), Keys.DELETE);
-        input.sendKeys(dateYyyyMmDd);
-        input.sendKeys(Keys.TAB); // Tab ra ngoài để đóng lịch popup nếu nó hiện
-    }
-    
-    private void typeTextArea(String label, String value) {
-        WebElement input = driver.findElement(By.xpath("//label[text()='" + label + "']/ancestor::div[contains(@class,'oxd-input-group')]//textarea"));
-        input.sendKeys(value);
-    }
-    
-    private void selectAutocomplete(String label, String textToType) {
-        WebElement input = driver.findElement(By.xpath("//label[text()='" + label + "']/ancestor::div[contains(@class,'oxd-input-group')]//input"));
-        input.sendKeys(Keys.chord(Keys.CONTROL, "a"), Keys.DELETE);
-        input.sendKeys(textToType.split(" ")[0]); 
-        try { Thread.sleep(2000); } catch (Exception ignored) {}
-        try {
-            wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[@role='listbox']")));
-            driver.findElement(By.xpath("//div[@role='listbox']//div[@role='option'][1]")).click();
-        } catch (Exception ignored) {}
+        input.sendKeys(dateStr);
+        driver.findElement(By.xpath("//h6")).click();
     }
 
-    private void clickSave() {
-        WebElement btn = driver.findElement(By.cssSelector("button[type='submit']"));
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", btn);
-        waitForLoader();
-    }
-
-    private void waitForLoader() {
+    private void handlePartialDays() {
         try {
-            wait.withTimeout(Duration.ofSeconds(2)).until(ExpectedConditions.visibilityOfElementLocated(By.className("oxd-form-loader")));
-            wait.withTimeout(Duration.ofSeconds(10)).until(ExpectedConditions.invisibilityOfElementLocated(By.className("oxd-form-loader")));
-        } catch (Exception ignored) {}
-    }
-
-    private void verifySuccessMessage() {
-        try {
-            wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[contains(@class, 'oxd-toast--success')]")));
+            WebElement dropdown = driver.findElement(By.xpath("//label[contains(text(), 'Partial Days')]/../following-sibling::div//div[contains(@class,'oxd-select-text')]"));
+            if (dropdown.isDisplayed()) {
+                dropdown.click();
+                wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//div[@role='option'][1]"))).click();
+            }
         } catch (Exception ignored) {}
     }
 }

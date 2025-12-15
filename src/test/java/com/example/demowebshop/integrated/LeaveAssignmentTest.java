@@ -4,10 +4,8 @@ import org.junit.jupiter.api.*;
 import org.openqa.selenium.*;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 
-import java.time.Duration;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -15,145 +13,131 @@ public class LeaveAssignmentTest extends BaseTest {
 
     @BeforeEach
     void preCondition() {
-        loginAsAdmin(); // Đảm bảo luôn login Admin trước mỗi test
+        if (driver == null) setupSuite();
+
+        // Đảm bảo đang login admin
+        if (!driver.getCurrentUrl().contains("dashboard")) {
+            loginAsAdmin();
+        }
+
+        // Điều hướng và reset form trước mỗi test case
         navigateToLeaveEntitlements();
     }
 
     private void navigateToLeaveEntitlements() {
-        // Navigate: Leave -> Entitlements -> Add Entitlements
-        if (driver.getCurrentUrl().contains("addLeaveEntitlement")) return;
-
-        wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//span[text()='Leave']"))).click();
-        
-        wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//span[normalize-space()='Entitlements']"))).click();
-        wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//a[normalize-space()='Add Entitlements']"))).click();
-        
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//h6[contains(., 'Add Leave Entitlement')]")));
-    }
-
-    @Test @Order(1)
-    public void TC_LA_001_AdminAssignLeaveSuccess() {
-        // 1. Điền Form
-        String empName = testData.get("employee").get("fullName").asText();
-        String leaveType = testData.get("leave").get("type").asText();
-        String amount = testData.get("leave").get("entitlementAmount").asText();
-
-        // Chọn nhân viên (Autocomplete)
-        selectAutocomplete("Employee Name", empName);
-        
-        // Chọn loại nghỉ (Dropdown)
-        selectDropdown("Leave Type", leaveType);
-
-        // Nhập số ngày
-        clearAndType("Entitlement", amount);
-
-        // 2. Click Save
-        clickSave();
-        
-        // 3. Xử lý Modal xác nhận (Confirm) - Thường xuất hiện khi gán phép
-        try {
-            WebElement confirmBtn = wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("//button[contains(., 'Confirm')]")));
-            confirmBtn.click();
-        } catch (Exception ignored) {
-            // Nếu không hiện confirm thì thôi (tùy cấu hình hệ thống)
+        // Nếu đang ở trang này rồi thì Refresh để reset form
+        if (driver.getCurrentUrl().contains("addLeaveEntitlement")) {
+            driver.navigate().refresh();
+        } else {
+            // Nếu chưa ở trang này thì điều hướng vào
+            wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//span[text()='Leave']"))).click();
+            wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//span[normalize-space()='Entitlements']"))).click();
+            wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//a[normalize-space()='Add Entitlements']"))).click();
         }
 
-        // 4. Verify Success
-        verifySuccessMessage();
+    }
+    @Test
+    @Order(1)
+    void testAssignLeaveMissingName() {
+        System.out.println("🔹 TC_LA_002: Gán phép thiếu tên nhân viên (Negative)");
+
+        String leaveType = testData.get("leave").get("type").asText();
+        String amount = testData.get("leave").get("partialAmount").asText();
+
+        // Bỏ trống Employee Name, chỉ chọn loại phép và số lượng
+        selectDropdown("Leave Type", leaveType);
+        driver.findElement(By.xpath("//label[text()='Entitlement']/../following-sibling::div//input")).sendKeys(amount);
+
+        // Click Save (Nút save có thể click được ngay cả khi form chưa valid)
+        // Dùng xpath chính xác tới nút Save
+        driver.findElement(By.xpath("//button[text()=' Save ']")).click();
+
+        // Verify Lỗi Required
+        String expectedError = testData.get("messages").get("required").asText();
+        String actualError = getFieldError("Employee Name");
+        assertEquals(expectedError, actualError, "Lỗi hiển thị không đúng!");
     }
 
-    @Test @Order(2)
-    public void TC_LA_003_AssignLeaveNegativeDays() {
-        // Test này chỉ kiểm tra validation, không cần submit thật
-        
+    @Test
+    @Order(2)
+    void testAssignLeaveNegativeDays() throws InterruptedException {
+        System.out.println("🔹 TC_LA_003: Gán phép số âm (Negative)");
+
         String empName = testData.get("employee").get("fullName").asText();
         String leaveType = testData.get("leave").get("type").asText();
         String negativeAmount = testData.get("leave").get("negativeAmount").asText();
 
-        selectAutocomplete("Employee Name", empName);
+        typeAutocomplete("Employee Name", empName);
         selectDropdown("Leave Type", leaveType);
-        
-        // Nhập số âm
-        clearAndType("Entitlement", negativeAmount);
-        
-        clickSave();
 
-        // Verify lỗi format (thường là "Should be a number..." hoặc tương tự)
-        // Lưu ý: Text lỗi trong JSON của bạn là 'formatError', hãy chắc chắn nó khớp với UI thực tế
+        driver.findElement(By.xpath("//label[text()='Entitlement']/../following-sibling::div//input")).sendKeys(negativeAmount);
+
+        driver.findElement(By.xpath("//button[text()=' Save ']")).click();
+
+        // Verify Lỗi Format
         String expectedError = testData.get("messages").get("formatError").asText();
         String actualError = getFieldError("Entitlement");
-        
-        // Dùng contains vì đôi khi UI có thêm khoảng trắng
-        assertTrue(actualError.contains("Should be") || actualError.contains(expectedError), 
-            "Lỗi hiển thị không đúng. Mong đợi chứa: " + expectedError + " - Thực tế: " + actualError);
+        assertEquals(expectedError, actualError, "Thông báo lỗi số âm không đúng!");
     }
 
-    // --- HELPER METHODS ---
 
-    private void selectAutocomplete(String label, String textToType) {
-        WebElement input = driver.findElement(By.xpath("//label[text()='" + label + "']/ancestor::div[contains(@class,'oxd-input-group')]//input"));
-        input.sendKeys(Keys.chord(Keys.CONTROL, "a"), Keys.DELETE);
-        input.sendKeys(textToType.split(" ")[0]); // Gõ phần đầu của tên
-        
-        try { Thread.sleep(2000); } catch (Exception ignored) {} // Đợi API gợi ý
+    @Test
+    @Order(3)
+    void testAdminAssignLeaveSuccess() throws InterruptedException {
+        System.out.println("🔹 TC_LA_001: Admin gán ngày phép thành công");
 
-        try {
-            wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[@role='listbox']")));
-            // Chọn option đầu tiên
-            driver.findElement(By.xpath("//div[@role='listbox']//div[@role='option'][1]")).click();
-        } catch (Exception e) {
-            System.out.println("⚠️ Không thấy gợi ý cho: " + textToType);
-        }
+        String empName = testData.get("employee").get("fullName").asText();
+        String leaveType = testData.get("leave").get("type").asText();
+        String amount = testData.get("leave").get("entitlementAmount").asText();
+
+        typeAutocomplete("Employee Name", empName);
+        selectDropdown("Leave Type", leaveType);
+
+        WebElement entInput = wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.xpath("//label[text()='Entitlement']/../following-sibling::div//input")));
+        entInput.sendKeys(amount);
+
+        clickSave();
+        verifySuccessMessage();
+    }
+
+    // ================= HELPER METHODS =================
+
+    private void typeAutocomplete(String label, String text) throws InterruptedException {
+        WebElement input = wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.xpath("//label[text()='" + label + "']/../following-sibling::div//input")));
+        input.sendKeys(text);
+        Thread.sleep(3000);
+        wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//div[@role='listbox']//div[1]"))).click();
     }
 
     private void selectDropdown(String label, String optionText) {
-        driver.findElement(By.xpath("//label[text()='" + label + "']/ancestor::div[contains(@class,'oxd-input-group')]//div[contains(@class, 'oxd-select-text')]")).click();
-        
-        // Chọn option theo text chính xác
-        try {
-            WebElement option = wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("//div[@role='option']//span[text()='" + optionText + "']")));
-            option.click();
-        } catch (Exception e) {
-            // Fallback: chọn cái đầu tiên nếu không tìm thấy text (để debug)
-            driver.findElement(By.xpath("//div[@role='option'][1]")).click();
-        }
+        wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//label[text()='" + label + "']/../following-sibling::div//div[@class='oxd-select-text-input']"))).click();
+        wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//div[@role='option']//span[text()='" + optionText + "']"))).click();
     }
 
-    private void clearAndType(String label, String value) {
-        WebElement input = driver.findElement(By.xpath("//label[text()='" + label + "']/ancestor::div[contains(@class,'oxd-input-group')]//input"));
-        input.sendKeys(Keys.chord(Keys.CONTROL, "a"), Keys.DELETE);
-        input.sendKeys(value);
-    }
-    
     private void clickSave() {
-        WebElement btn = driver.findElement(By.cssSelector("button[type='submit']"));
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", btn);
-        waitForLoader();
-    }
-    
-    private String getFieldError(String fieldLabel) {
+        driver.findElement(By.xpath("//button[text()=' Save ']")).click();
         try {
-            WebElement errorSpan = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                By.xpath("//label[text()='" + fieldLabel + "']/ancestor::div[contains(@class,'oxd-input-group')]//span[contains(@class,'oxd-input-group__message')]")
-            ));
-            return errorSpan.getText();
-        } catch (TimeoutException e) {
-            return "No Error Found";
-        }
-    }
-    
-    private void waitForLoader() {
-        try {
-            wait.withTimeout(Duration.ofSeconds(2)).until(ExpectedConditions.visibilityOfElementLocated(By.className("oxd-form-loader")));
-            wait.withTimeout(Duration.ofSeconds(10)).until(ExpectedConditions.invisibilityOfElementLocated(By.className("oxd-form-loader")));
+            wait.withTimeout(java.time.Duration.ofSeconds(2))
+                    .until(ExpectedConditions.elementToBeClickable(By.xpath("//button[text()=' Confirm ']")))
+                    .click();
         } catch (Exception ignored) {}
+    }
+
+    private String getFieldError(String fieldLabel) {
+        return driver.findElement(By.xpath("//label[text()='" + fieldLabel + "']/../following-sibling::span")).getText();
     }
 
     private void verifySuccessMessage() {
+        String expectedMsg = testData.get("messages").get("saved").asText();
         try {
-            wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[contains(@class, 'oxd-toast--success')]")));
-        } catch (Exception ignored) {}
+            WebElement toast = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[contains(@class, 'oxd-toast--success')]")));
+            assertTrue(toast.getText().contains(expectedMsg) || toast.getText().contains("Success"));
+        } catch (Exception e) {
+            assertTrue(driver.getPageSource().contains(expectedMsg) || driver.getPageSource().contains("Successfully"), "Không thấy thông báo thành công!");
+        }
     }
 }
