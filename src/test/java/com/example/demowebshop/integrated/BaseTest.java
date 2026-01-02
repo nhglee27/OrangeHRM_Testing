@@ -10,8 +10,8 @@ import org.monte.media.FormatKeys.MediaType;
 import org.monte.media.math.Rational;
 import org.monte.screenrecorder.ScreenRecorder;
 import org.openqa.selenium.*;
-import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.firefox.FirefoxOptions;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -46,7 +46,7 @@ public class BaseTest {
 
     @BeforeAll
     public static void setupSuite() {
-        WebDriverManager.firefoxdriver().setup();
+        WebDriverManager.chromedriver().setup();
 
         try {
             ObjectMapper mapper = new ObjectMapper();
@@ -63,16 +63,22 @@ public class BaseTest {
             System.err.println("❌ Lỗi đọc file JSON: " + e.getMessage());
         }
 
-        FirefoxOptions options = new FirefoxOptions();
+        ChromeOptions options = new ChromeOptions();
+        options.addArguments("--remote-allow-origins=*");
         
-        driver = new FirefoxDriver(options);
+        Map<String, Object> prefs = new HashMap<>();
+        prefs.put("credentials_enable_service", false);
+        prefs.put("profile.password_manager_enabled", false);
+        options.setExperimentalOption("prefs", prefs);
+
+        driver = new ChromeDriver(options);
         driver.manage().window().maximize();
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5));
         driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(30));
         driver.manage().deleteAllCookies();
 
         wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-        System.out.println("✅ KHỞI TẠO FIREFOX DRIVER THÀNH CÔNG!");
+        System.out.println("✅ KHỞI TẠO CHROME DRIVER THÀNH CÔNG!");
     }
 
     @AfterAll
