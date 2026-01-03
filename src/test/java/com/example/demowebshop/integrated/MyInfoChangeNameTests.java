@@ -26,7 +26,7 @@ public class MyInfoChangeNameTests extends BaseTest {
     private static final By TOAST_SUCCESS = By.xpath("//div[contains(@class,'oxd-toast') and contains(.,'Successfully Updated')]");
     private static final By VALIDATION_ERRORS = By.xpath("//span[contains(@class,'oxd-input-group__message')]");
     private static final By FORM_LOADER = By.cssSelector("div.oxd-form-loader");
-    private static final String FULLNAME_JSON_PATH = "src/test/resources/fullNameData.json";
+    private static final String FULLNAME_JSON_PATH = "src/test/resources/_21130349_doxuanhau_testdata.json";
 
     private static List<FullNameCase> fullNameCases;
 
@@ -36,9 +36,10 @@ public class MyInfoChangeNameTests extends BaseTest {
         try {
             ObjectMapper mapper = new ObjectMapper();
             File jsonFile = new File(FULLNAME_JSON_PATH);
-            fullNameCases = mapper.readValue(jsonFile, new TypeReference<List<FullNameCase>>() {});
+            com.fasterxml.jackson.databind.JsonNode root = mapper.readTree(jsonFile);
+            fullNameCases = mapper.convertValue(root.get("fullNameTestCases"), new TypeReference<List<FullNameCase>>() {});
         } catch (Exception e) {
-            throw new RuntimeException("Không thể load fullNameData.json: " + e.getMessage(), e);
+            throw new RuntimeException("Không thể load _21130349_doxuanhau_testdata.json: " + e.getMessage(), e);
         }
 
         // 1. Tự động login từ BaseTest
