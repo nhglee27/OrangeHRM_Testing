@@ -1,4 +1,4 @@
-package com.example.demowebshop._21130577_TranAnhTri_Lab7.tests;
+package com.example.demowebshop.integrated;
 
 import java.time.Duration;
 
@@ -18,6 +18,7 @@ public class VacancyTest extends BaseTest {
 
   @BeforeEach
   public void initPages() {
+    loginAsAdmin();
     vacancies = new VacanciesPage(driver);
     addVacancy = new AddVacancyPage(driver);
   }
@@ -70,13 +71,13 @@ public class VacancyTest extends BaseTest {
 
     // 1. Click mở dropdown Vacancy
     WebElement dropdown = wait.until(ExpectedConditions.elementToBeClickable(
-        By.xpath("//label[text()='Vacancy']/../following-sibling::div//div[contains(@class,'oxd-select-text')]")));
+        By.xpath("//div[contains(@class,'oxd-select-dropdown') and @role='listbox']")));
     dropdown.click();
     Thread.sleep(1000);
 
     // 2. Chọn option chứa tên Vacancy vừa tạo
     WebElement option = wait.until(ExpectedConditions.elementToBeClickable(
-        By.xpath("//div[@role='option']//span[contains(text(),'Automation QA')]")));
+        By.xpath("//div[contains(@class,'oxd-select-option')]//span[normalize-space()='Automation QA']")));
     option.click();
     Thread.sleep(1000);
 

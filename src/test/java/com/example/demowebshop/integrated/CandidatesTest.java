@@ -1,14 +1,8 @@
-package com.example.demowebshop._21130577_TranAnhTri_Lab7.tests;
+package com.example.demowebshop.integrated;
 
 import java.time.Duration;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.*;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -22,12 +16,9 @@ public class CandidatesTest extends BaseTest {
   CandidatesPage candidates;
   AddCandidatePage addCandidate;
 
-  @BeforeAll
-  public static void beforeAll() {
-  }
-
   @BeforeEach
   public void initPages() {
+    loginAsAdmin();
     candidates = new CandidatesPage(driver);
     addCandidate = new AddCandidatePage(driver);
   }
@@ -98,7 +89,7 @@ public class CandidatesTest extends BaseTest {
         ExpectedConditions.visibilityOfElementLocated(
             By.xpath("//input[@placeholder='Type for hints...']")));
     searchInput.sendKeys("Anh");
-    waitABit(1500);
+    waitABit(2500);
 
     // 2. Chờ dropdown autocomplete xuất hiện
     WebElement dropdown = wait.until(ExpectedConditions.visibilityOfElementLocated(
@@ -143,9 +134,14 @@ public class CandidatesTest extends BaseTest {
     waitABit(3000);
 
     // Kiểm tra kết quả rỗng
-    boolean noResults = driver.getPageSource().contains("No Records Found");
+    WebElement invalidMsg = wait.until(
+        ExpectedConditions.visibilityOfElementLocated(
+            By.xpath("//span[contains(@class,'oxd-input-field-error-message')]")));
 
-    Assertions.assertTrue(noResults, "Kết quả tìm kiếm không hiển thị đúng trạng thái Not Found!");
+    Assertions.assertEquals(
+        "Invalid",
+        invalidMsg.getText(),
+        "Không hiển thị validation 'Invalid' khi không tìm thấy candidate!");
   }
 
   // ---------- MODIFY ----------
