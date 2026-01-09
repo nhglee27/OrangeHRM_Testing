@@ -35,7 +35,12 @@
   "employee": {
     "username": "mc4981",
     "password": "Mc4981~",
-    "fullName": "Ha Manh Cuong"
+    "fullName": "Ha Manh Cuong",
+    "id": "4981",
+    "firstName": "Ha",
+    "middleName": "Manh",
+    "lastName": "Cuong",
+    "employeeId": "4981"
   },
   "leave": {
     "type": "CAN - FMLA",
